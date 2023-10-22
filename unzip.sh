@@ -1,0 +1,1 @@
+cat results/results_KP_idol__* > results_KP_idol.csv

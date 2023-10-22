@@ -3,6 +3,8 @@ title: Knapsack Problem
 output:
   rmdformats::readthedown:
     toc: 3
+  html_document:
+    fig_format: png
 ---
 
 ## About
@@ -45,28 +47,78 @@ Here, variable $x_{j}$ equals 1, if and only if, item $i$ is selected in the kna
 
 In this section, we start by reading the raw computational results stored in CSV files. Note that these CSV files is stored as an *artifact* on the [GitHub Actions of the hlefebvr/idol-benchmark-kp repository](https://github.com/hlefebvr/idol-benchmark-kp/actions) and can be downloaded without restrictions by clicking on the latest workflow execution named `benchmark` under the section "Artifacts" (also note that artifacts have a life span of 90 days).
 
+### Raw results
 
-```{r}
-time_limit = 5 * 60
-```
-
-
-### Reading the results
-
-We first start to read results obtained using idol, which can be found inside the `results_GAP_idol.csv` file (Note that this file can be obtained by running `cat results_GAP_idol__*.csv > results_GAP_idol.csv` after having extracted the `.zip` the artifact).
+All results can be found in `results_GAP_idol.csv` file (Note that this file can be obtained by running `cat results_GAP_idol__*.csv > results_GAP_idol.csv` after having extracted the `.zip` the artifact).
 
 ```{r}
 results = read.csv("../results_KP_idol.csv", header = FALSE)
 colnames(results) = c("tag", "instance", "solver", "node_selection_rule", "branching_rule", "heuristic", "time", "n_nodes", "best_bound", "best_obj")
 
 results$tag = NULL
+```
+
+Instances whose time limit have been reached should have an execution time which is exactly the time limit.
+This to avoid issues when plotting perofrmance profiles.
+
+```{r}
+time_limit = 5 * 60
 
 if (sum(results$time > time_limit) > 0) {
   results[results$time > time_limit,] = time_limit
 }
+```
 
+Then, we add a column "solver_with_params" which exactly characterizes a given solver, i.e., a solver with its paraneters which were tweaked.
+
+```{r}
 results$solver_with_params = paste0(results$solver, ", ", results$node_selection_rule, ",", results$branching_rule, ", ", results$heuristic)
 results[results$solver == "external",]$solver_with_params = "external" 
+```
 
+All in all, here are the "raw" results we obtained.
+
+```{r, echo = FALSE}
 paged_table(results)
 ```
+
+### Adding performance data
+
+In this section, we enhance our dataset by creating a new column which stores the performance score of each "solver_with_params" with respect to the best solver.
+To this end, we introduce the function "get_performance".
+
+```{r}
+get_performance = function(dataset, column_instance = "instance", column_time = "time", column_solver = "solver", column_output = "perforance" ) {
+  
+  # Calculate the best time for each instance
+  best_times = dataset %>%
+    group_by(!!sym(column_instance)) %>%
+    mutate(best_time = min(!!sym(column_time)))
+  
+  # Calculate the performance for each combination of instance and solver
+  result = best_times %>%
+    group_by(instance, !!sym(column_solver)) %>%
+    mutate(performance = !!sym(column_time) / best_time) %>%
+    ungroup()
+
+  return (result)
+}
+
+results = get_performance(results, column_solver = "solver_with_params")
+```
+
+We can then plot the perforance profile of our solvers using ggplot2.
+
+```{r}
+ggplot(results, aes(x = performance, color = solver_with_params)) +
+  geom_step(stat = "ecdf") +
+  labs(
+    x = "Performance w.r.t. best solver",
+    y = "ECDF",
+    title = "ECDF of Performance for All Solvers (log x-axis)"
+  ) +
+  scale_color_discrete(name = "Solver") +
+  scale_x_log10() +
+  theme_minimal()
+```
+
