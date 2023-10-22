@@ -34,6 +34,8 @@ jobs:
         instances:
           # - "dummies"
           - "00Uncorrelated/n00050/"
+          - "00Uncorrelated/n00100/"
+          - "00Uncorrelated/n00200/"
     steps:
     - uses: actions/checkout@v3
 
