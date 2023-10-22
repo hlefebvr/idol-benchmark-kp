@@ -84,41 +84,93 @@ paged_table(results)
 
 ### Adding performance data
 
-In this section, we enhance our dataset by creating a new column which stores the performance score of each "solver_with_params" with respect to the best solver.
-To this end, we introduce the function "get_performance".
+In this section, we introduce the function "get_performance" which augments a given dataset with the performance of each solver with respect to the best solver.
 
 ```{r}
-get_performance = function(dataset, column_instance = "instance", column_time = "time", column_solver = "solver", column_output = "perforance" ) {
+get_performance = function(dataset, 
+                           column_instance = "instance",
+                           column_criteria = "time",
+                           column_solver = "solver",
+                           column_output = "performance") {
   
   # Calculate the best time for each instance
   best_times = dataset %>%
     group_by(!!sym(column_instance)) %>%
-    mutate(best_time = min(!!sym(column_time)))
+    mutate(best_time = min(!!sym(column_criteria)))
   
   # Calculate the performance for each combination of instance and solver
   result = best_times %>%
     group_by(instance, !!sym(column_solver)) %>%
-    mutate(performance = !!sym(column_time) / best_time) %>%
+    mutate(!!sym(column_output) := !!sym(column_criteria) / best_time) %>%
     ungroup()
 
   return (result)
 }
 
-results = get_performance(results, column_solver = "solver_with_params")
+plot_performance = function(dataset,
+                            column_instance = "instance", 
+                            column_criteria = "time", 
+                            column_solver = "solver", 
+                            column_output = "performance") {
+  
+  perf = get_performance(dataset, column_instance, column_criteria, column_solver, column_output)
+  
+  result = ggplot(perf, aes(x = performance, color = !!sym(column_solver))) +
+    geom_step(stat = "ecdf") +
+    labs(
+      x = "Performance w.r.t. best solver",
+      y = "ECDF",
+      title = paste0("ECDF of ", column_criteria ," performance for all solvers")
+    ) +
+    scale_color_discrete() +
+    scale_x_log10() +
+    theme_minimal()
+  
+  return (result)
+  
+}
 ```
 
-We can then plot the perforance profile of our solvers using ggplot2.
+We can then plot the performance profile of our solvers using ggplot2.
 
 ```{r}
-ggplot(results, aes(x = performance, color = solver_with_params)) +
-  geom_step(stat = "ecdf") +
-  labs(
-    x = "Performance w.r.t. best solver",
-    y = "ECDF",
-    title = "ECDF of Performance for All Solvers (log x-axis)"
-  ) +
-  scale_color_discrete(name = "Solver") +
-  scale_x_log10() +
-  theme_minimal()
+plot_performance(results, column_solver = "solver_with_params")
 ```
+
+## Node selection strategies
+
+```{r}
+results_node_selection_strategies = results[results$solver == "bab" & results$branching_rule == "most-infeasible" & results$heuristic == "-",]
+```
+
+```{r}
+plot_performance(results_node_selection_strategies, column_criteria = "time", column_solver = "solver_with_params")
+plot_performance(results_node_selection_strategies, column_criteria = "n_nodes", column_solver = "solver_with_params")
+```
+
+## Branching rules
+
+
+```{r}
+results_branching_rules = results[results$solver == "bab" & results$node_selection_rule == "best-bound" & results$heuristic == "-",]
+```
+
+```{r}
+plot_performance(results_branching_rules, column_criteria = "time", column_solver = "solver_with_params")
+plot_performance(results_branching_rules, column_criteria = "n_nodes", column_solver = "solver_with_params")
+```
+
+
+## Heuristics
+
+
+```{r}
+results_heuristics = results[results$solver == "bab" & results$node_selection_rule == "best-bound" & results$branching_rule == "most-infeasible",]
+```
+
+```{r}
+plot_performance(results_heuristics, column_criteria = "time", column_solver = "solver_with_params")
+plot_performance(results_heuristics, column_criteria = "n_nodes", column_solver = "solver_with_params")
+```
+
 
