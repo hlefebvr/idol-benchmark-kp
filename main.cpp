@@ -125,9 +125,9 @@ int main(int t_argc, const char** t_argv) {
 
     const std::string path_to_instance = t_argv[1];
     const std::string solver = t_argv[2];
-    std::string str_node_selection_rule;
-    std::string str_branching_rule;
-    std::string str_heuristic;
+    std::string str_node_selection_rule = "-";
+    std::string str_branching_rule = "-";
+    std::string str_heuristic = "-";
 
     Env env;
     auto model = create_kp_model(env, path_to_instance);
@@ -179,7 +179,9 @@ int main(int t_argc, const char** t_argv) {
     file << "result,"
          << path_to_instance << ","
          << solver << ","
-         << solver << ","
+         << str_node_selection_rule << ","
+         << str_branching_rule << ","
+         << str_heuristic << ","
          << model.optimizer().time().count() << ","
          << get_n_solved_nodes(model) << ","
          << model.get_best_bound() << ","
