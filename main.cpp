@@ -129,8 +129,10 @@ int main(int t_argc, const char** t_argv) {
     auto model = create_kp_model(env, path_to_instance);
 
     if (solver == "external") {
+
         model.use(GLPK());
-    } else {
+
+    } else if (solver == "bab") {
 
         if (t_argc != 5) {
             throw Exception("Arguments node-selection-rule, branching-rule and heuristic are mandatory when solver is idol");
@@ -152,7 +154,11 @@ int main(int t_argc, const char** t_argv) {
                 .with_log_frequency(1)
         );
 
+    } else {
+        throw Exception("Unknown solver: " + solver);
     }
+
+    model.optimizer().set_param_time_limit(5 * 60);
 
     model.optimize();
 
