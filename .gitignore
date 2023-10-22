@@ -1,2 +1,9 @@
+cmake-*
 .idea
-cmake-build-*
+*.csv
+.Rproj.user
+.RData
+.Rhistory
+*.render.html
+*.log
+*.csv

@@ -1,0 +1,61 @@
+---
+title: Knapsack Problem
+output:
+  rmdformats::readthedown:
+    toc: 3
+---
+
+## About
+
+This page contains an automatic benchmark between the C++ library [idol](https://github.com/hlefebvr/idol) and the Julia package [Coluna.jl](https://github.com/atoptima/Coluna.jl)
+to test their implementation of the [Branch-and-Price algorithm](https://en.wikipedia.org/wiki/Branch_and_price) for solving instances of the [Generalized Assignment Problem](https://en.wikipedia.org/wiki/Generalized_assignment_problem).
+
+The results presented here are automatically generated using GitHub Actions and R with Rmarkdown. Note that the experiments themselves are run with GitHub Actions for which the code
+is fully public and can be found [here for implementation details](https://github.com/hlefebvr/idol_benchmark) and [here for GitHub Actions configuration](https://github.com/hlefebvr/idol_benchmark/blob/main/.github/workflows/benchmark.yml).
+
+The experiments were conducted on a free GitHub-hosted runner with an `ubuntu-latest` virtual machine with two CPU cores (x86_64), 7 GB of RAM and 14 GB of SSD space (see [hardware specifications here](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners)).
+
+Last automatic run: `r format(Sys.time(), '%d/%m/%y %H:%M:%S')`.
+
+```{r echo = FALSE}
+library(rmarkdown)
+suppressMessages(library(dplyr))
+library(ggplot2)
+
+knitr::opts_chunk$set(
+  out.width = "100%"
+)
+
+```
+
+## Mathematical models
+
+Let $m$ be a given of agents and let $n$ be a set of tasks to perform. Let $c_{ij}$ be the cost of assigning task $j$ to agent $i$, $w_{ij}$ be the resource consumption of task $j$ when performed by agent $i$ and let $t_i$ be the resource capacity of agent $i$. The Generalized Assignment Problem (GAP) can be modeled as
+
+$$
+  \begin{array}{lll}
+    \textrm{minimize } & \displaystyle \sum_{i=1}^m \sum_{j=1}^n c_{ij} x_{ij} \\
+    \textrm{subject to } & \displaystyle \sum_{j=1}^n w_{ij}x_{ij} \le t_{i} & i=1,...,m \\
+    & \displaystyle \sum_{i=1}^m x_{ij} = 1 & j = 1,...,n \\
+    & x_{ij} \in \{ 0,1 \}.
+  \end{array}
+$$
+Here, variable $x_{ij}$ encodes the assignment decision and equals $1$ if and only if task $j$ is assigned to agent $i$.
+
+## Reading instances
+
+In this section, we start by reading the raw computational results stored in CSV files. Note that these CSV files is stored as an *artifact* on the [GitHub Actions of the hlefebvr/idol_benchmark repository](https://github.com/hlefebvr/idol_benchmark/actions) and can be downloaded without restrictions by clicking on the latest workflow execution named `new_workflow` under the section "Artifacts" (also note that artifacts have a life span of 90 days).
+
+
+```{r}
+time_limit = 5 * 60
+```
+
+
+### Reading the results
+
+We first start to read results obtained using idol, which can be found inside the `results_GAP_idol.csv` file (Note that this file can be obtained by running `cat results_GAP_idol__*.csv > results_GAP_idol.csv` after having extracted the `.zip` the artifact).
+
+```{r}
+idol = read.csv("../results_KP_idol.csv", header = FALSE)
+```

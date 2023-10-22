@@ -18,6 +18,7 @@
 #include <idol/optimizers/branch-and-bound/branching-rules/factories/UniformlyRandom.h>
 
 #include <idol/optimizers/callbacks/SimpleRounding.h>
+#include <fstream>
 
 using namespace idol;
 
@@ -162,13 +163,21 @@ int main(int t_argc, const char** t_argv) {
 
     model.optimize();
 
-    std::cout << "result,"
-              << path_to_instance << ","
-              << model.optimizer().time().count() << ","
-              << get_n_solved_nodes(model) << ","
-              << model.get_best_bound() << ","
-              << model.get_best_obj()
-              << std::endl;
+    std::ofstream file("results_KP_idol.csv", std::ios::out | std::ios::app);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open error destination file.");
+    }
+
+    file << "result,"
+         << path_to_instance << ","
+         << model.optimizer().time().count() << ","
+         << get_n_solved_nodes(model) << ","
+         << model.get_best_bound() << ","
+         << model.get_best_obj()
+         << std::endl;
+
+    file.close();
 
     return 0;
 }
