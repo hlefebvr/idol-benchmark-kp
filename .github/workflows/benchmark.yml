@@ -32,7 +32,9 @@ jobs:
           - "bab best-bound strong-branching -"
           - "bab best-bound most-infeasible simple-rounding"
         instances:
-          - "dummies"
+          # - "dummies"
+          - "00Uncorrelated/n0050/R01000"
+          - "00Uncorrelated/n0050/R10000"
     steps:
     - uses: actions/checkout@v3
 
