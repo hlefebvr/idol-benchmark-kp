@@ -134,7 +134,7 @@ int main(int t_argc, const char** t_argv) {
 
     } else if (solver == "bab") {
 
-        if (t_argc != 5) {
+        if (t_argc != 6) {
             throw Exception("Arguments node-selection-rule, branching-rule and heuristic are mandatory when solver is idol");
         }
 
