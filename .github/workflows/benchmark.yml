@@ -42,11 +42,14 @@ jobs:
     - name: Update apt-get
       run: sudo apt-get update
 
-    - name: Install GLPK
-      run: sudo apt-get install glpk-utils libglpk-dev
+    - name: Download HiGHS
+      run: git clone https://github.com/ERGO-Code/HiGHS.git
+
+    - name: Install HiGHS
+      run: mkdir HiGHS/build && cd HiGHS/build && cmake .. && make && sudo make install
 
     - name: Install idol
-      run: git clone https://github.com/hlefebvr/idol.git && cd idol && cmake -DUSE_GLPK=YES . && make && sudo make install
+      run: git clone https://github.com/hlefebvr/idol.git && cd idol && cmake -DUSE_HIGHS=YES . && make && sudo make install
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/cmake-build-debug -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
