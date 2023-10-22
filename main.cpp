@@ -2,22 +2,22 @@
 
 #include <idol/modeling.h>
 #include <idol/problems/knapsack-problem/KP_Instance.h>
-#include <optimizers/solvers/GLPK.h>
-#include <optimizers/branch-and-bound/BranchAndBound.h>
+#include <idol/optimizers/solvers/GLPK.h>
+#include <idol/optimizers/branch-and-bound/BranchAndBound.h>
 
-#include <optimizers/branch-and-bound/node-selection-rules/factories/BestBound.h>
-#include <optimizers/branch-and-bound/node-selection-rules/factories/WorstBound.h>
-#include <optimizers/branch-and-bound/node-selection-rules/factories/DepthFirst.h>
-#include <optimizers/branch-and-bound/node-selection-rules/factories/BreadthFirst.h>
+#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BestBound.h>
+#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/WorstBound.h>
+#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/DepthFirst.h>
+#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BreadthFirst.h>
 
-#include <optimizers/branch-and-bound/branching-rules/factories/StrongBranching.h>
-#include <optimizers/branch-and-bound/branching-rules/factories/FirstInfeasibleFound.h>
-#include <optimizers/branch-and-bound/branching-rules/factories/LeastInfeasible.h>
-#include <optimizers/branch-and-bound/branching-rules/factories/MostInfeasible.h>
-#include <optimizers/branch-and-bound/branching-rules/factories/PseudoCost.h>
-#include <optimizers/branch-and-bound/branching-rules/factories/UniformlyRandom.h>
+#include <idol/optimizers/branch-and-bound/branching-rules/factories/StrongBranching.h>
+#include <idol/optimizers/branch-and-bound/branching-rules/factories/FirstInfeasibleFound.h>
+#include <idol/optimizers/branch-and-bound/branching-rules/factories/LeastInfeasible.h>
+#include <idol/optimizers/branch-and-bound/branching-rules/factories/MostInfeasible.h>
+#include <idol/optimizers/branch-and-bound/branching-rules/factories/PseudoCost.h>
+#include <idol/optimizers/branch-and-bound/branching-rules/factories/UniformlyRandom.h>
 
-#include <optimizers/callbacks/SimpleRounding.h>
+#include <idol/optimizers/callbacks/SimpleRounding.h>
 
 using namespace idol;
 
