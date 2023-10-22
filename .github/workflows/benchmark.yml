@@ -33,8 +33,7 @@ jobs:
           - "bab best-bound most-infeasible simple-rounding"
         instances:
           # - "dummies"
-          - "00Uncorrelated/n00050/R01000"
-          - "00Uncorrelated/n00050/R10000"
+          - "00Uncorrelated/n00050/"
     steps:
     - uses: actions/checkout@v3
 

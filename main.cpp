@@ -125,6 +125,9 @@ int main(int t_argc, const char** t_argv) {
 
     const std::string path_to_instance = t_argv[1];
     const std::string solver = t_argv[2];
+    std::string str_node_selection_rule;
+    std::string str_branching_rule;
+    std::string str_heuristic;
 
     Env env;
     auto model = create_kp_model(env, path_to_instance);
@@ -139,9 +142,13 @@ int main(int t_argc, const char** t_argv) {
             throw Exception("Arguments node-selection-rule, branching-rule and heuristic are mandatory when solver is idol");
         }
 
-        std::unique_ptr<NodeSelectionRuleFactory<NodeVarInfo>> node_selection_rule(get_node_selection_rule(t_argv[3]));
-        std::unique_ptr<BranchingRuleFactory<NodeVarInfo>> branching_rule(get_branching_rule(t_argv[4]));
-        std::unique_ptr<CallbackFactory> heuristic(get_heuristic(t_argv[5]));
+        str_node_selection_rule = t_argv[3];
+        str_branching_rule = t_argv[4];
+        str_heuristic = t_argv[5];
+
+        std::unique_ptr<NodeSelectionRuleFactory<NodeVarInfo>> node_selection_rule(get_node_selection_rule(str_node_selection_rule));
+        std::unique_ptr<BranchingRuleFactory<NodeVarInfo>> branching_rule(get_branching_rule(str_branching_rule));
+        std::unique_ptr<CallbackFactory> heuristic(get_heuristic(str_heuristic));
 
         model.use(
             BranchAndBound()
@@ -171,6 +178,8 @@ int main(int t_argc, const char** t_argv) {
 
     file << "result,"
          << path_to_instance << ","
+         << solver << ","
+         << solver << ","
          << model.optimizer().time().count() << ","
          << get_n_solved_nodes(model) << ","
          << model.get_best_bound() << ","
