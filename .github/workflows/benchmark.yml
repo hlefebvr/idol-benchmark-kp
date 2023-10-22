@@ -24,7 +24,7 @@ jobs:
           - "bab best-bound most-infeasible -"
           - "bab worst-bound most-infeasible -"
           - "bab depth-first most-infeasible -"
-          - "bab breadth-first most-infeasible -"
+          # - "bab breadth-first most-infeasible -"
           - "bab best-bound least-infeasible -"
           - "bab best-bound first-infeasible -"
           - "bab best-bound uniformly-random -"
