@@ -167,10 +167,10 @@ plot_performance = function(dataset,
 }
 ```
 
-We can then plot the performance profile of our solvers using ggplot2.
+We can then plot the performance profile of our solvers using ggplot2 (note that we excluded branch-and-bound with breadth-first node selection and branch-and-bound without heuristics since they do not have the same instance set).
 
 ```{r}
-plot_performance(results, column_solver = "solver_with_params")
+plot_performance(results[results$node_selection_rule != "breadth-first" & (results$heuristic != "-" | results$solver == "external"),], column_solver = "solver_with_params")
 ```
 
 ## Node selection strategies
