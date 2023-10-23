@@ -9,6 +9,7 @@
 #include <idol/optimizers/branch-and-bound/node-selection-rules/factories/WorstBound.h>
 #include <idol/optimizers/branch-and-bound/node-selection-rules/factories/DepthFirst.h>
 #include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BreadthFirst.h>
+#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BestEstimate.h>
 
 #include <idol/optimizers/branch-and-bound/branching-rules/factories/StrongBranching.h>
 #include <idol/optimizers/branch-and-bound/branching-rules/factories/FirstInfeasibleFound.h>
@@ -69,6 +70,10 @@ NodeSelectionRuleFactory<NodeVarInfo>* get_node_selection_rule(const std::string
 
     if (t_arg == "breadth-first") {
         return new BreadthFirst::Strategy<NodeVarInfo>(BreadthFirst());
+    }
+
+    if (t_arg == "best-estimate") {
+        return new BestEstimate::Strategy<NodeVarInfo>(BestEstimate());
     }
 
     throw Exception("Unknown node selection rule: " + t_arg);
