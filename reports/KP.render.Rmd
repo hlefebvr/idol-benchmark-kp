@@ -176,7 +176,7 @@ plot_performance(results, column_solver = "solver_with_params")
 ## Node selection strategies
 
 ```{r}
-results_node_selection_strategies = results[results$solver == "bab" & results$branching_rule == "most-infeasible" & results$heuristic == "-",]
+results_node_selection_strategies = results[results$solver == "bab" & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
 ```
 
 ```{r}
@@ -188,7 +188,7 @@ plot_performance(results_node_selection_strategies, column_criteria = "n_nodes",
 
 
 ```{r}
-results_branching_rules = results[results$solver == "bab" & results$node_selection_rule == "best-bound" & results$heuristic == "-",]
+results_branching_rules = results[results$solver == "bab" & results$node_selection_rule == "best-bound" & results$heuristic == "simple-rounding",]
 ```
 
 ```{r}
