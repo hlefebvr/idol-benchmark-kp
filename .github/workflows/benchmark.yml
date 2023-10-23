@@ -14,8 +14,8 @@ env:
 
 jobs:
 
-  idol:
-
+  idol_smaller:
+    name: Smaller instances
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,7 +24,7 @@ jobs:
           - "bab best-bound most-infeasible simple-rounding"
           - "bab worst-bound most-infeasible simple-rounding"
           - "bab depth-first most-infeasible simple-rounding"
-          # - "bab breadth-first most-infeasible -"
+          - "bab breadth-first most-infeasible -"
           - "bab best-bound least-infeasible simple-rounding"
           - "bab best-bound first-infeasible simple-rounding"
           - "bab best-bound uniformly-random simple-rounding"
@@ -32,10 +32,7 @@ jobs:
           - "bab best-bound strong-branching simple-rounding"
           - "bab best-bound most-infeasible -"
         instances:
-          # - "dummies"
           - "00Uncorrelated/n00050/"
-          - "00Uncorrelated/n00100/"
-          - "00Uncorrelated/n00200/"
     steps:
     - uses: actions/checkout@v3
 
@@ -69,9 +66,61 @@ jobs:
         name: results
         path: results_KP_idol__*.csv
 
+  idol_larger:
+    name: Smaller instances
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arguments:
+          - "external"
+          - "bab best-bound most-infeasible simple-rounding"
+          - "bab worst-bound most-infeasible simple-rounding"
+          - "bab depth-first most-infeasible simple-rounding"
+          - "bab best-bound least-infeasible simple-rounding"
+          - "bab best-bound first-infeasible simple-rounding"
+          - "bab best-bound uniformly-random simple-rounding"
+          - "bab best-bound pseudo-cost simple-rounding"
+          - "bab best-bound strong-branching simple-rounding"
+        instances:
+          - "00Uncorrelated/n00100/"
+          - "00Uncorrelated/n00200/"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Update apt-get
+        run: sudo apt-get update
+
+      - name: Download HiGHS
+        run: git clone https://github.com/ERGO-Code/HiGHS.git
+
+      - name: Install HiGHS
+        run: mkdir HiGHS/build && cd HiGHS/build && cmake .. && make && sudo make install
+
+      - name: Install idol
+        run: git clone --branch dev https://github.com/hlefebvr/idol.git && cd idol && cmake -DUSE_HIGHS=YES . && make && sudo make install
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/cmake-build-debug -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/cmake-build-debug --config ${{env.BUILD_TYPE}}
+
+      - name: Solve instances with idol
+        run: ./run.sh ./data/${{ matrix.instances }} ${{ matrix.arguments }}
+        shell: bash
+
+      - name: Rename results file
+        run: mv results_KP_idol.csv results_KP_idol__$(uuidgen).csv
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: results
+          path: results_KP_idol__*.csv
+
+
   render:
     runs-on: ubuntu-latest
-    needs: idol
+    needs: [idol_smaller, idol_larger]
     steps:
       - uses: actions/checkout@v3
 
@@ -83,7 +132,7 @@ jobs:
       - name: Collect all results from idol
         run: cat results_KP_idol__*.csv > results_KP_idol.csv
 
-      # Install all R markdown dependecies
+      # Install all R markdown dependencies
       - name: Update apt-get
         run: sudo apt-get update
       - name: Install dependencies of kableExtra
