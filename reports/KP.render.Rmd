@@ -76,6 +76,11 @@ results$solver_with_params = paste0(results$solver, ", ", results$node_selection
 results[results$solver == "external",]$solver_with_params = "external" 
 ```
 
+```{r}
+results = results %>% 
+  mutate(n_items = as.integer(gsub(".*n(\\d+).*", "\\1", instance)))
+```
+
 All in all, here are the "raw" results we obtained.
 
 ```{r, echo = FALSE}
@@ -177,8 +182,20 @@ ggsave("ecdf.png", plot = to_save, width = 8, height = 4)
 
 ## Node selection strategies
 
+### On smaller instances
+
 ```{r}
-results_node_selection_strategies = results[results$solver == "bab" & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
+results_node_selection_strategies = results[results$solver == "bab" & results$n_items == 50 & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
+```
+
+```{r}
+plot_performance(results_node_selection_strategies, column_criteria = "time", column_solver = "solver_with_params")
+plot_performance(results_node_selection_strategies, column_criteria = "n_nodes", column_solver = "solver_with_params")
+```
+### On larger instances
+
+```{r}
+results_node_selection_strategies = results[results$solver == "bab" & results$n_items > 50 & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
 ```
 
 ```{r}
@@ -203,7 +220,7 @@ plot_performance(results_branching_rules, column_criteria = "n_nodes", column_so
 
 
 ```{r}
-results_heuristics = results[results$solver == "bab" & results$node_selection_rule == "best-bound" & results$branching_rule == "most-infeasible",]
+results_heuristics = results[results$solver == "bab" & results$n_items == 50 & results$node_selection_rule == "best-bound" & results$branching_rule == "most-infeasible",]
 ```
 
 ```{r}
