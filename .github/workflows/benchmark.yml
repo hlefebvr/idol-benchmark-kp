@@ -68,7 +68,7 @@ jobs:
         path: results_KP_idol__*.csv
 
   idol_larger:
-    name: Smaller instances
+    name: Larger instances
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -84,8 +84,8 @@ jobs:
           - "bab best-bound pseudo-cost simple-rounding"
           - "bab best-bound strong-branching simple-rounding"
         instances:
-          - "00Uncorrelated/n00100/"
           - "00Uncorrelated/n00200/"
+          - "00Uncorrelated/n00500/"
     steps:
       - uses: actions/checkout@v3
 
