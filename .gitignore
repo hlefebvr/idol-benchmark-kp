@@ -7,3 +7,6 @@ cmake-*
 *.render.html
 *.log
 *.csv
+*.png
+*.zip
+results/

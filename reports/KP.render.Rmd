@@ -49,7 +49,7 @@ In this section, we start by reading the raw computational results stored in CSV
 
 ### Raw results
 
-All results can be found in `results_GAP_idol.csv` file (Note that this file can be obtained by running `cat results_GAP_idol__*.csv > results_GAP_idol.csv` after having extracted the `.zip` the artifact).
+All results can be found in `results_KP_idol.csv` file (Note that this file can be obtained by running `cat results_KP_idol__*.csv > results_KP_idol.csv` after having extracted the `.zip` the artifact).
 
 ```{r}
 results = read.csv("../results_KP_idol.csv", header = FALSE)
@@ -120,7 +120,7 @@ paged_table(mismatches)
 
 ### Some helper functions
 
-In this section, we introduce the function "get_performance" which augments a given dataset with the performance of each solver with respect to the best solver.
+In this section, we introduce the function "get_performance" which augments a given data set with the performance of each solver with respect to the best solver.
 
 ```{r}
 get_performance = function(dataset, 
@@ -170,7 +170,9 @@ plot_performance = function(dataset,
 We can then plot the performance profile of our solvers using ggplot2 (note that we excluded branch-and-bound with breadth-first node selection and branch-and-bound without heuristics since they do not have the same instance set).
 
 ```{r}
-plot_performance(results[results$node_selection_rule != "breadth-first" & (results$heuristic != "-" | results$solver == "external"),], column_solver = "solver_with_params")
+to_save = plot_performance(results[results$node_selection_rule != "breadth-first" & (results$heuristic != "-" | results$solver == "external"),], column_solver = "solver_with_params")
+to_save
+ggsave("ecdf.png", plot = to_save, width = 8, height = 4)
 ```
 
 ## Node selection strategies
