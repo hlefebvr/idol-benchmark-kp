@@ -69,7 +69,7 @@ if (sum(results$time > time_limit) > 0) {
 }
 ```
 
-Then, we add a column "solver_with_params" which exactly characterizes a given solver, i.e., a solver with its paraneters which were tweaked.
+Then, we add a column "solver_with_params" which exactly characterizes a given solver, i.e., a solver with its parameters which were tweaked.
 
 ```{r}
 results$solver_with_params = paste0(results$solver, ", ", results$node_selection_rule, ",", results$branching_rule, ", ", results$heuristic)
@@ -79,6 +79,10 @@ results[results$solver == "external",]$solver_with_params = "external"
 ```{r}
 results = results %>% 
   mutate(n_items = as.integer(gsub(".*n(\\d+).*", "\\1", instance)))
+```
+
+```{r}
+results$unsolved = results$time >= time_limit
 ```
 
 All in all, here are the "raw" results we obtained.
@@ -128,54 +132,82 @@ paged_table(mismatches)
 In this section, we introduce the function "get_performance" which augments a given data set with the performance of each solver with respect to the best solver.
 
 ```{r}
-get_performance = function(dataset, 
-                           column_instance = "instance",
-                           column_criteria = "time",
-                           column_solver = "solver",
-                           column_output = "performance") {
+add_performance_ratio = function(dataset, 
+                                 criterion_column = "total_time",
+                                 unsolved_column = "unsolved",
+                                 instance_column = "instance",
+                                 solver_column = "solver",
+                                 output_column = "performance_ratio") {
   
-  # Calculate the best time for each instance
-  best_times = dataset %>%
-    group_by(!!sym(column_instance)) %>%
-    mutate(best_time = min(!!sym(column_criteria)))
+  # Compute best score for each instance
+  best = dataset %>%
+    group_by(!!sym(instance_column)) %>%
+    mutate(best_solver = min(!!sym(criterion_column)))
   
-  # Calculate the performance for each combination of instance and solver
-  result = best_times %>%
-    group_by(instance, !!sym(column_solver)) %>%
-    mutate(!!sym(column_output) := !!sym(column_criteria) / best_time) %>%
+  # Compute performance ratio for each instance and solver
+  result = best %>%
+    group_by(!!sym(instance_column), !!sym(solver_column)) %>%
+    mutate(!!sym(output_column) := !!sym(criterion_column) / best_solver) %>%
     ungroup()
+  
+  if (sum(result[,unsolved_column]) > 0) {
+    result[result[,unsolved_column] == TRUE,output_column] = max(result[,output_column])
+  }
 
   return (result)
 }
 
-plot_performance = function(dataset,
-                            column_instance = "instance", 
-                            column_criteria = "time", 
-                            column_solver = "solver", 
-                            column_output = "performance") {
+plot_performance_profile = function(dataset,
+                                    criterion_column,
+                                    unsolved_column = "unsolved",
+                                    instance_column = "instance",
+                                    solver_column = "solver"
+                                    ) {
   
-  perf = get_performance(dataset, column_instance, column_criteria, column_solver, column_output)
+  dataset_with_performance_ratios = add_performance_ratio(dataset,
+                                                          criterion_column = criterion_column,
+                                                          instance_column = instance_column,
+                                                          solver_column = solver_column,
+                                                          unsolved_column = unsolved_column)
   
-  result = ggplot(perf, aes(x = performance, color = !!sym(column_solver))) +
-    geom_step(stat = "ecdf") +
-    labs(
-      x = "Performance w.r.t. best solver",
-      y = "ECDF",
-      title = paste0("ECDF of ", column_criteria ," performance for all solvers")
-    ) +
-    scale_color_discrete() +
-    scale_x_log10() +
-    theme_minimal()
+  solved_dataset_with_performance_ratios = dataset_with_performance_ratios[!dataset_with_performance_ratios[,unsolved_column],]
+  
+  compute_performance_profile_point = function(method, data) {
+    
+    performance_ratios = solved_dataset_with_performance_ratios[solved_dataset_with_performance_ratios[,solver_column] == method,]$performance_ratio
+    
+    unscaled_performance_profile_point = ecdf(performance_ratios)(data)
+    
+    n_instances = sum(dataset[,solver_column] == method)
+    n_solved_instances = sum(dataset[,solver_column] == method & !dataset[,unsolved_column])
+    
+    return( unscaled_performance_profile_point * n_solved_instances / n_instances )
+  }
+  
+  perf = solved_dataset_with_performance_ratios %>%
+    group_by(!!sym(solver_column)) %>%
+    mutate(performance_profile_point = compute_performance_profile_point(unique(!!sym(solver_column)), performance_ratio))
+  
+  result = ggplot(data = perf, aes(x = performance_ratio, y = performance_profile_point, color = !!sym(solver_column))) +
+              geom_line()
   
   return (result)
-  
 }
+
 ```
 
 We can then plot the performance profile of our solvers using ggplot2 (note that we excluded branch-and-bound with breadth-first node selection and branch-and-bound without heuristics since they do not have the same instance set).
 
 ```{r}
-to_save = plot_performance(results[results$node_selection_rule != "breadth-first" & (results$heuristic != "-" | results$solver == "external"),], column_solver = "solver_with_params")
+to_save = plot_performance_profile(
+            results[results$node_selection_rule != "breadth-first" & (results$heuristic != "-" | results$solver == "external"),], 
+            criterion_column = "time",
+            solver_column = "solver_with_params"
+          ) +
+          labs(x = "Performance ratio", y = "% of instances") +
+          scale_y_continuous(limits = c(0, 1)) +
+          scale_x_log10() +
+          theme_minimal()
 to_save
 ggsave("ecdf.png", plot = to_save, width = 8, height = 4)
 ```
@@ -189,18 +221,54 @@ results_node_selection_strategies = results[results$solver == "bab" & results$n_
 ```
 
 ```{r}
-plot_performance(results_node_selection_strategies, column_criteria = "time", column_solver = "solver_with_params")
-plot_performance(results_node_selection_strategies, column_criteria = "n_nodes", column_solver = "solver_with_params")
+plot_performance_profile(
+      results_node_selection_strategies, 
+      criterion_column = "time",
+      solver_column = "solver_with_params"
+    )  +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
+
+plot_performance_profile(
+      results_node_selection_strategies, 
+      criterion_column = "n_nodes", 
+      solver_column = "solver_with_params"
+    ) +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
 ```
+
 ### On larger instances
+
 
 ```{r}
 results_node_selection_strategies = results[results$solver == "bab" & results$n_items > 50 & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
 ```
 
 ```{r}
-plot_performance(results_node_selection_strategies, column_criteria = "time", column_solver = "solver_with_params")
-plot_performance(results_node_selection_strategies, column_criteria = "n_nodes", column_solver = "solver_with_params")
+plot_performance_profile(
+        results_node_selection_strategies, 
+        criterion_column = "time",
+        solver_column = "solver_with_params"
+    )  +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
+
+plot_performance_profile(
+    results_node_selection_strategies, 
+    criterion_column = "n_nodes", 
+    solver_column = "solver_with_params"
+    )  +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
 ```
 
 ## Branching rules
@@ -211,8 +279,26 @@ results_branching_rules = results[results$solver == "bab" & results$node_selecti
 ```
 
 ```{r}
-plot_performance(results_branching_rules, column_criteria = "time", column_solver = "solver_with_params")
-plot_performance(results_branching_rules, column_criteria = "n_nodes", column_solver = "solver_with_params")
+plot_performance_profile(
+    results_branching_rules, 
+    criterion_column = "time",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
+
+
+plot_performance_profile(
+    results_branching_rules, 
+    criterion_column = "n_nodes",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
 ```
 
 
@@ -224,8 +310,25 @@ results_heuristics = results[results$solver == "bab" & results$n_items == 50 & r
 ```
 
 ```{r}
-plot_performance(results_heuristics, column_criteria = "time", column_solver = "solver_with_params")
-plot_performance(results_heuristics, column_criteria = "n_nodes", column_solver = "solver_with_params")
+plot_performance_profile(
+    results_heuristics,
+    criterion_column = "time",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
+
+plot_performance_profile(
+    results_heuristics, 
+    criterion_column = "n_nodes",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
 ```
 
 
