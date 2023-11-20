@@ -44,65 +44,65 @@ unsigned int get_n_solved_nodes(const Model& t_model) {
 
     const auto& optimizer = t_model.optimizer();
 
-    if (!optimizer.is<Optimizers::BranchAndBound<NodeVarInfo>>()) {
+    if (!optimizer.is<Optimizers::BranchAndBound<DefaultNodeInfo>>()) {
         return 0;
     }
 
-    const auto& branch_and_bound = optimizer.as<Optimizers::BranchAndBound<NodeVarInfo>>();
+    const auto& branch_and_bound = optimizer.as<Optimizers::BranchAndBound<DefaultNodeInfo>>();
 
     return branch_and_bound.n_solved_nodes();
 
 }
 
-NodeSelectionRuleFactory<NodeVarInfo>* get_node_selection_rule(const std::string& t_arg) {
+NodeSelectionRuleFactory<DefaultNodeInfo>* get_node_selection_rule(const std::string& t_arg) {
 
     if (t_arg == "best-bound") {
-        return new BestBound::Strategy<NodeVarInfo>(BestBound());
+        return new BestBound::Strategy<DefaultNodeInfo>(BestBound());
     }
 
     if (t_arg == "worst-bound") {
-        return new WorstBound::Strategy<NodeVarInfo>(WorstBound());
+        return new WorstBound::Strategy<DefaultNodeInfo>(WorstBound());
     }
 
     if (t_arg == "depth-first") {
-        return new DepthFirst::Strategy<NodeVarInfo>(DepthFirst());
+        return new DepthFirst::Strategy<DefaultNodeInfo>(DepthFirst());
     }
 
     if (t_arg == "breadth-first") {
-        return new BreadthFirst::Strategy<NodeVarInfo>(BreadthFirst());
+        return new BreadthFirst::Strategy<DefaultNodeInfo>(BreadthFirst());
     }
 
     if (t_arg == "best-estimate") {
-        return new BestEstimate::Strategy<NodeVarInfo>(BestEstimate());
+        return new BestEstimate::Strategy<DefaultNodeInfo>(BestEstimate());
     }
 
     throw Exception("Unknown node selection rule: " + t_arg);
 }
 
-BranchingRuleFactory<NodeVarInfo>* get_branching_rule(const std::string& t_arg) {
+BranchingRuleFactory<DefaultNodeInfo>* get_branching_rule(const std::string& t_arg) {
 
     if (t_arg == "most-infeasible") {
-        return new MostInfeasible::Strategy<NodeVarInfo>();
+        return new MostInfeasible::Strategy<DefaultNodeInfo>();
     }
 
     if (t_arg == "least-infeasible") {
-        return new LeastInfeasible::Strategy<NodeVarInfo>();
+        return new LeastInfeasible::Strategy<DefaultNodeInfo>();
     }
 
     if (t_arg == "first-infeasible") {
-        return new FirstInfeasibleFound::Strategy<NodeVarInfo>();
+        return new FirstInfeasibleFound::Strategy<DefaultNodeInfo>();
     }
 
     if (t_arg == "uniformly-random") {
-        return new UniformlyRandom::Strategy<NodeVarInfo>();
+        return new UniformlyRandom::Strategy<DefaultNodeInfo>();
     }
 
     if (t_arg == "strong-branching") {
-        return new StrongBranching::Strategy<NodeVarInfo>();
+        return new StrongBranching::Strategy<DefaultNodeInfo>();
     }
 
     if (t_arg == "pseudo-cost") {
-        return new PseudoCost::Strategy<NodeVarInfo>();
+        return new PseudoCost::Strategy<DefaultNodeInfo>();
     }
 
     throw Exception("Unknown branching rule rule: " + t_arg);
@@ -151,8 +151,8 @@ int main(int t_argc, const char** t_argv) {
         str_branching_rule = t_argv[4];
         str_heuristic = t_argv[5];
 
-        std::unique_ptr<NodeSelectionRuleFactory<NodeVarInfo>> node_selection_rule(get_node_selection_rule(str_node_selection_rule));
-        std::unique_ptr<BranchingRuleFactory<NodeVarInfo>> branching_rule(get_branching_rule(str_branching_rule));
+        std::unique_ptr<NodeSelectionRuleFactory<DefaultNodeInfo>> node_selection_rule(get_node_selection_rule(str_node_selection_rule));
+        std::unique_ptr<BranchingRuleFactory<DefaultNodeInfo>> branching_rule(get_branching_rule(str_branching_rule));
         std::unique_ptr<CallbackFactory> heuristic(get_heuristic(str_heuristic));
 
         model.use(
