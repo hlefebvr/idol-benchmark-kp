@@ -205,6 +205,7 @@ int main(int t_argc, const char** t_argv) {
          << str_node_selection_rule << ","
          << str_branching_rule << ","
          << str_heuristic << ","
+         << str_cutting_planes << ","
          << model.optimizer().time().count() << ","
          << get_n_solved_nodes(model) << ","
          << model.get_best_bound() << ","

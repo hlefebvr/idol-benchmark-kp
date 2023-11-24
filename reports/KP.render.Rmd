@@ -53,7 +53,7 @@ All results can be found in `results_KP_idol.csv` file (Note that this file can 
 
 ```{r}
 results = read.csv("../results_KP_idol.csv", header = FALSE)
-colnames(results) = c("tag", "instance", "solver", "node_selection_rule", "branching_rule", "heuristic", "time", "n_nodes", "best_bound", "best_obj")
+colnames(results) = c("tag", "instance", "solver", "node_selection_rule", "branching_rule", "heuristic", "cutting_plane", "time", "n_nodes", "best_bound", "best_obj")
 
 results$tag = NULL
 ```
@@ -72,7 +72,7 @@ if (sum(results$time > time_limit) > 0) {
 Then, we add a column "solver_with_params" which exactly characterizes a given solver, i.e., a solver with its parameters which were tweaked.
 
 ```{r}
-results$solver_with_params = paste0(results$solver, ", ", results$node_selection_rule, ",", results$branching_rule, ", ", results$heuristic)
+results$solver_with_params = paste0(results$solver, ", ", results$node_selection_rule, ",", results$branching_rule, ", ", results$heuristic, ", ", results$cutting_plane)
 results[results$solver == "external",]$solver_with_params = "external" 
 ```
 
