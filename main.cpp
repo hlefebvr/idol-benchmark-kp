@@ -130,7 +130,7 @@ BranchAndBoundCallbackFactory<DefaultNodeInfo>* get_cutting_planes(const std::st
     }
 
     if (t_arg == "knapsack-cover") {
-        return new Cuts::KnapsackCover();
+        return Cuts::KnapsackCover().with_max_cuts_factor(50).clone();
     }
 
     throw Exception("Unknown heuristic: " + t_arg);
