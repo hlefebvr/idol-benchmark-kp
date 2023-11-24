@@ -18,7 +18,8 @@
 #include <idol/optimizers/branch-and-bound/branching-rules/factories/PseudoCost.h>
 #include <idol/optimizers/branch-and-bound/branching-rules/factories/UniformlyRandom.h>
 
-#include <idol/optimizers/callbacks/SimpleRounding.h>
+#include <idol/optimizers/callbacks/heuristics/SimpleRounding.h>
+#include <idol/optimizers/callbacks/cutting-planes/KnapsackCover.h>
 #include <fstream>
 
 using namespace idol;
@@ -122,10 +123,23 @@ CallbackFactory* get_heuristic(const std::string& t_arg) {
     throw Exception("Unknown heuristic: " + t_arg);
 }
 
+BranchAndBoundCallbackFactory<DefaultNodeInfo>* get_cutting_planes(const std::string& t_arg) {
+
+    if (t_arg == "-") {
+        return nullptr;
+    }
+
+    if (t_arg == "knapsack-cover") {
+        return new Cuts::KnapsackCover();
+    }
+
+    throw Exception("Unknown heuristic: " + t_arg);
+}
+
 int main(int t_argc, const char** t_argv) {
 
     if (t_argc < 2) {
-        throw Exception("Arguments: path_to_instance solver [node-selection-rule] [branching-rule] [heuristic]");
+        throw Exception("Arguments: path_to_instance solver [node-selection-rule] [branching-rule] [heuristic] [cutting-planes]");
     }
 
     const std::string path_to_instance = t_argv[1];
@@ -133,6 +147,7 @@ int main(int t_argc, const char** t_argv) {
     std::string str_node_selection_rule = "-";
     std::string str_branching_rule = "-";
     std::string str_heuristic = "-";
+    std::string str_cutting_planes = "-";
 
     Env env;
     auto model = create_kp_model(env, path_to_instance);
@@ -143,17 +158,19 @@ int main(int t_argc, const char** t_argv) {
 
     } else if (solver == "bab") {
 
-        if (t_argc != 6) {
-            throw Exception("Arguments node-selection-rule, branching-rule and heuristic are mandatory when solver is idol");
+        if (t_argc != 7) {
+            throw Exception("Arguments node-selection-rule, branching-rule, heuristic and cutting-planes are mandatory when solver is idol");
         }
 
         str_node_selection_rule = t_argv[3];
         str_branching_rule = t_argv[4];
         str_heuristic = t_argv[5];
+        str_cutting_planes = t_argv[6];
 
         std::unique_ptr<NodeSelectionRuleFactory<DefaultNodeInfo>> node_selection_rule(get_node_selection_rule(str_node_selection_rule));
         std::unique_ptr<BranchingRuleFactory<DefaultNodeInfo>> branching_rule(get_branching_rule(str_branching_rule));
         std::unique_ptr<CallbackFactory> heuristic(get_heuristic(str_heuristic));
+        std::unique_ptr<BranchAndBoundCallbackFactory<DefaultNodeInfo>> cutting_planes(get_cutting_planes(str_cutting_planes));
 
         model.use(
             BranchAndBound()
@@ -161,10 +178,11 @@ int main(int t_argc, const char** t_argv) {
                 .with_node_selection_rule(*node_selection_rule)
                 .with_branching_rule(*branching_rule)
                 .conditional((bool) heuristic, [&](auto& x) {
-                    x.with_callback(*heuristic);
+                    x.add_callback(*heuristic);
                 })
-                .with_log_level(Info, Blue)
-                .with_log_frequency(1)
+                .conditional((bool) cutting_planes, [&](auto& x) {
+                    x.add_callback(*cutting_planes);
+                })
         );
 
     } else {
