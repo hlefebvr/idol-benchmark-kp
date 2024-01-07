@@ -1,0 +1,334 @@
+---
+title: Knapsack Problem
+output:
+  rmdformats::readthedown:
+    toc: 3
+  html_document:
+    fig_format: png
+---
+
+## About
+
+This page contains an automatic benchmark for the C++ library [idol](https://github.com/hlefebvr/idol)
+to test its implementation of the [Branch-and-Bound algorithm](https://en.wikipedia.org/wiki/Branch_and_bound) for solving instances of the [Knapsack Problem](https://en.wikipedia.org/wiki/Knapsack_problem).
+
+The results presented here are automatically generated using GitHub Actions and R with Rmarkdown. Note that the experiments themselves are run with GitHub Actions for which the code
+is fully public and can be found [here for implementation details](https://github.com/hlefebvr/idol-benchmark-kp) and [here for GitHub Actions configuration](https://github.com/hlefebvr/idol-benchmark-kp/blob/main/.github/workflows/benchmark.yml).
+
+The experiments were conducted on a free GitHub-hosted runner with an `ubuntu-latest` virtual machine with two CPU cores (x86_64), 7 GB of RAM and 14 GB of SSD space (see [hardware specifications here](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners)).
+
+Last automatic run: `r format(Sys.time(), '%d/%m/%y %H:%M:%S')`.
+
+```{r echo = FALSE}
+library(rmarkdown)
+suppressMessages(library(dplyr))
+library(ggplot2)
+
+knitr::opts_chunk$set(
+  out.width = "100%"
+)
+
+```
+
+## Mathematical models
+
+Let us consider a set of $n$ items. Each item $i$ has a profit $p_i$ which is earned if the item is selected and a weight $w_i$. The knapsack capacity is noted $W$.
+
+$$
+  \begin{array}{lll}
+    \max \ & \displaystyle \sum_{j=1}^n p_j x_j \\
+    \textrm{s.t.} \ & \displaystyle \sum_{j=1}^n w_j x_j \le W \\
+    & x_{j} \in \{ 0,1 \} \quad j=1,...,n.
+  \end{array}
+$$
+Here, variable $x_{j}$ equals 1, if and only if, item $i$ is selected in the knapsack. 
+
+## Reading instances
+
+In this section, we start by reading the raw computational results stored in CSV files. Note that these CSV files is stored as an *artifact* on the [GitHub Actions of the hlefebvr/idol-benchmark-kp repository](https://github.com/hlefebvr/idol-benchmark-kp/actions) and can be downloaded without restrictions by clicking on the latest workflow execution named `benchmark` under the section "Artifacts" (also note that artifacts have a life span of 90 days).
+
+### Raw results
+
+All results can be found in `results_KP_idol.csv` file (Note that this file can be obtained by running `cat results_KP_idol__*.csv > results_KP_idol.csv` after having extracted the `.zip` the artifact).
+
+```{r}
+results = read.csv("../results_KP_idol.csv", header = FALSE)
+colnames(results) = c("tag", "instance", "solver", "node_selection_rule", "branching_rule", "heuristic", "cutting_plane", "time", "n_nodes", "best_bound", "best_obj")
+
+results$tag = NULL
+```
+
+Instances whose time limit have been reached should have an execution time which is exactly the time limit.
+This to avoid issues when plotting perofrmance profiles.
+
+```{r}
+time_limit = 5 * 60
+
+if (sum(results$time > time_limit) > 0) {
+  results[results$time > time_limit,] = time_limit
+}
+```
+
+Then, we add a column "solver_with_params" which exactly characterizes a given solver, i.e., a solver with its parameters which were tweaked.
+
+```{r}
+results$solver_with_params = paste0(results$solver, ", ", results$node_selection_rule, ",", results$branching_rule, ", ", results$heuristic, ", ", results$cutting_plane)
+results[results$solver == "external",]$solver_with_params = "external" 
+```
+
+```{r}
+results = results %>% 
+  mutate(n_items = as.integer(gsub(".*n(\\d+).*", "\\1", instance)))
+```
+
+```{r}
+results$unsolved = results$time >= time_limit
+```
+
+All in all, here are the "raw" results we obtained.
+
+```{r, echo = FALSE}
+paged_table(results)
+```
+
+
+### Checking results
+
+In this section, we first make sure that every solver reports the same optimal objective value for solved instances. We thus introduce function `compare_results` which takes as input a set of results and two solver names for which the results should be compared. The function returns the list of instances which for which the two methods report different objective values (with a tolerance of $10^{-3}$).
+
+```{r}
+compare_results = function (dataset, solver_a, solver_b) {
+  
+  results_a = dataset[dataset$solver_with_params == solver_a & dataset$time < time_limit,]
+  results_b = dataset[dataset$solver_with_params == solver_b & dataset$time < time_limit,]
+  
+  merged = merge(results_a, results_b, by = c("instance"))
+  
+  return ( merged[ abs(merged$objective_value.x - merged$objective_value.y) > 1e-3 ,] )
+}
+```
+
+Then, we compare all solvers together.
+
+```{r}
+mismatches = data.frame()
+
+for (solver_with_params in unique(results$solver_with_params)) {
+  mismatch = compare_results(results, "external", solver_with_params)
+  if (nrow(mismatch) > 0) {
+    print(paste0("There was mismatched instances between external solver and ", solver_with_params))
+    mismatch = mismatch[,c("instance", "solver_with_params.x", "solver_with_params.y", "status.x", "status.y", "time.x", "time.y", "objective_value.x", "objective_value.y")]
+    rownames(mismatch) = NULL
+    mismatches = rbind(mismatches, mismatch)
+  }
+}
+
+paged_table(mismatches)
+```
+
+
+### Some helper functions
+
+In this section, we introduce the function "get_performance" which augments a given data set with the performance of each solver with respect to the best solver.
+
+```{r}
+add_performance_ratio = function(dataset, 
+                                 criterion_column = "total_time",
+                                 unsolved_column = "unsolved",
+                                 instance_column = "instance",
+                                 solver_column = "solver",
+                                 output_column = "performance_ratio") {
+  
+  # Compute best score for each instance
+  best = dataset %>%
+    group_by(!!sym(instance_column)) %>%
+    mutate(best_solver = min(!!sym(criterion_column)))
+  
+  # Compute performance ratio for each instance and solver
+  result = best %>%
+    group_by(!!sym(instance_column), !!sym(solver_column)) %>%
+    mutate(!!sym(output_column) := !!sym(criterion_column) / best_solver) %>%
+    ungroup()
+  
+  if (sum(result[,unsolved_column]) > 0) {
+    result[result[,unsolved_column] == TRUE,output_column] = max(result[,output_column])
+  }
+
+  return (result)
+}
+
+plot_performance_profile = function(dataset,
+                                    criterion_column,
+                                    unsolved_column = "unsolved",
+                                    instance_column = "instance",
+                                    solver_column = "solver"
+                                    ) {
+  
+  dataset_with_performance_ratios = add_performance_ratio(dataset,
+                                                          criterion_column = criterion_column,
+                                                          instance_column = instance_column,
+                                                          solver_column = solver_column,
+                                                          unsolved_column = unsolved_column)
+  
+  solved_dataset_with_performance_ratios = dataset_with_performance_ratios[!dataset_with_performance_ratios[,unsolved_column],]
+  
+  compute_performance_profile_point = function(method, data) {
+    
+    performance_ratios = solved_dataset_with_performance_ratios[solved_dataset_with_performance_ratios[,solver_column] == method,]$performance_ratio
+    
+    unscaled_performance_profile_point = ecdf(performance_ratios)(data)
+    
+    n_instances = sum(dataset[,solver_column] == method)
+    n_solved_instances = sum(dataset[,solver_column] == method & !dataset[,unsolved_column])
+    
+    return( unscaled_performance_profile_point * n_solved_instances / n_instances )
+  }
+  
+  perf = solved_dataset_with_performance_ratios %>%
+    group_by(!!sym(solver_column)) %>%
+    mutate(performance_profile_point = compute_performance_profile_point(unique(!!sym(solver_column)), performance_ratio))
+  
+  result = ggplot(data = perf, aes(x = performance_ratio, y = performance_profile_point, color = !!sym(solver_column))) +
+              geom_line()
+  
+  return (result)
+}
+
+```
+
+We can then plot the performance profile of our solvers using ggplot2 (note that we excluded branch-and-bound with breadth-first node selection and branch-and-bound without heuristics since they do not have the same instance set).
+
+```{r}
+to_save = plot_performance_profile(
+            results[results$node_selection_rule != "breadth-first" & (results$heuristic != "-" | results$solver == "external"),], 
+            criterion_column = "time",
+            solver_column = "solver_with_params"
+          ) +
+          labs(x = "Performance ratio", y = "% of instances") +
+          scale_y_continuous(limits = c(0, 1)) +
+          scale_x_log10() +
+          theme_minimal()
+to_save
+ggsave("ecdf.png", plot = to_save, width = 8, height = 4)
+```
+
+## Node selection strategies
+
+### On smaller instances
+
+```{r}
+results_node_selection_strategies = results[results$solver == "bab" & results$n_items == 50 & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
+```
+
+```{r}
+plot_performance_profile(
+      results_node_selection_strategies, 
+      criterion_column = "time",
+      solver_column = "solver_with_params"
+    )  +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
+
+plot_performance_profile(
+      results_node_selection_strategies, 
+      criterion_column = "n_nodes", 
+      solver_column = "solver_with_params"
+    ) +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
+```
+
+### On larger instances
+
+
+```{r}
+results_node_selection_strategies = results[results$solver == "bab" & results$n_items > 50 & results$branching_rule == "most-infeasible" & results$heuristic == "simple-rounding",]
+```
+
+```{r}
+plot_performance_profile(
+        results_node_selection_strategies, 
+        criterion_column = "time",
+        solver_column = "solver_with_params"
+    )  +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
+
+plot_performance_profile(
+    results_node_selection_strategies, 
+    criterion_column = "n_nodes", 
+    solver_column = "solver_with_params"
+    )  +
+    labs(x = "Performance ratio", y = "% of instances") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_log10() +
+    theme_minimal()
+```
+
+## Branching rules
+
+
+```{r}
+results_branching_rules = results[results$solver == "bab" & results$node_selection_rule == "best-bound" & results$heuristic == "simple-rounding",]
+```
+
+```{r}
+plot_performance_profile(
+    results_branching_rules, 
+    criterion_column = "time",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
+
+
+plot_performance_profile(
+    results_branching_rules, 
+    criterion_column = "n_nodes",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
+```
+
+
+## Heuristics
+
+
+```{r}
+results_heuristics = results[results$solver == "bab" & results$n_items == 50 & results$node_selection_rule == "best-bound" & results$branching_rule == "most-infeasible",]
+```
+
+```{r}
+plot_performance_profile(
+    results_heuristics,
+    criterion_column = "time",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
+
+plot_performance_profile(
+    results_heuristics, 
+    criterion_column = "n_nodes",
+    solver_column = "solver_with_params"
+  ) +
+  labs(x = "Performance ratio", y = "% of instances") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_log10() +
+  theme_minimal()
+```
+
+
