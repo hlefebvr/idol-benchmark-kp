@@ -2,24 +2,24 @@
 
 #include <idol/modeling.h>
 #include <idol/problems/knapsack-problem/KP_Instance.h>
-#include <idol/optimizers/wrappers/HiGHS/HiGHS.h>
-#include <idol/optimizers/branch-and-bound/BranchAndBound.h>
+#include <idol/optimizers/mixed-integer-optimization/wrappers/HiGHS/HiGHS.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/BranchAndBound.h>
 
-#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BestBound.h>
-#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/WorstBound.h>
-#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/DepthFirst.h>
-#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BreadthFirst.h>
-#include <idol/optimizers/branch-and-bound/node-selection-rules/factories/BestEstimate.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/node-selection-rules/factories/BestBound.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/node-selection-rules/factories/WorstBound.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/node-selection-rules/factories/DepthFirst.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/node-selection-rules/factories/BreadthFirst.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/node-selection-rules/factories/BestEstimate.h>
 
-#include <idol/optimizers/branch-and-bound/branching-rules/factories/StrongBranching.h>
-#include <idol/optimizers/branch-and-bound/branching-rules/factories/FirstInfeasibleFound.h>
-#include <idol/optimizers/branch-and-bound/branching-rules/factories/LeastInfeasible.h>
-#include <idol/optimizers/branch-and-bound/branching-rules/factories/MostInfeasible.h>
-#include <idol/optimizers/branch-and-bound/branching-rules/factories/PseudoCost.h>
-#include <idol/optimizers/branch-and-bound/branching-rules/factories/UniformlyRandom.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/branching-rules/factories/StrongBranching.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/branching-rules/factories/FirstInfeasibleFound.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/branching-rules/factories/LeastInfeasible.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/branching-rules/factories/MostInfeasible.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/branching-rules/factories/PseudoCost.h>
+#include <idol/optimizers/mixed-integer-optimization/branch-and-bound/branching-rules/factories/UniformlyRandom.h>
 
-#include <idol/optimizers/callbacks/heuristics/SimpleRounding.h>
-#include <idol/optimizers/callbacks/cutting-planes/KnapsackCover.h>
+#include <idol/optimizers/mixed-integer-optimization/callbacks/heuristics/SimpleRounding.h>
+#include <idol/optimizers/mixed-integer-optimization/callbacks/cutting-planes/KnapsackCover.h>
 #include <fstream>
 
 using namespace idol;
