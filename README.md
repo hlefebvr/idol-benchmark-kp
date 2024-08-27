@@ -1,6 +1,6 @@
 # Benchmarking idol's Branch-and-Bound - Knapsack Problem
 
-![Maintained](https://img.shields.io/maintenance/yes/2023)
+![Maintained](https://img.shields.io/maintenance/yes/2024)
 ![GitHub issues](https://img.shields.io/github/issues-raw/hlefebvr/idol-benchmark-kp)
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/hlefebvr/idol-benchmark-kp/benchmark.yml?branch=main)
 
