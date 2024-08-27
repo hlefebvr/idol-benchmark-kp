@@ -2,7 +2,7 @@
 
 #include <idol/modeling.h>
 #include <idol/problems/knapsack-problem/KP_Instance.h>
-#include <idol/optimizers/mixed-integer-optimization/wrappers/HiGHS/HiGHS.h>
+#include <idol/optimizers/mixed-integer-optimization/wrappers/GLPK/GLPK.h>
 #include <idol/optimizers/mixed-integer-optimization/branch-and-bound/BranchAndBound.h>
 
 #include <idol/optimizers/mixed-integer-optimization/branch-and-bound/node-selection-rules/factories/BestBound.h>
@@ -154,7 +154,7 @@ int main(int t_argc, const char** t_argv) {
 
     if (solver == "external") {
 
-        model.use(HiGHS());
+        model.use(GLPK());
 
     } else if (solver == "bab") {
 
@@ -174,7 +174,7 @@ int main(int t_argc, const char** t_argv) {
 
         model.use(
             BranchAndBound()
-                .with_node_optimizer(HiGHS::ContinuousRelaxation())
+                .with_node_optimizer(GLPK::ContinuousRelaxation())
                 .with_node_selection_rule(*node_selection_rule)
                 .with_branching_rule(*branching_rule)
                 .conditional((bool) heuristic, [&](auto& x) {
