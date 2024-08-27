@@ -7,7 +7,7 @@
 This code contains the code for benchmarking idol's Branch-and-Bound implementation.
 Currently, the comparison is done between [idol (C++ library)](https://github.com/hlefebvr/idol) and [GLPK](https://www.gnu.org/software/glpk/). 
 
-The external solver used to solve every involved sub-problem is [HiGHS](https://highs.dev/).
+The external solver used to solve every involved sub-problem is [GLPK](https://www.gnu.org/software/glpk/).
 
 ## Results
 
